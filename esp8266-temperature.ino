@@ -1,15 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include "config.h"
 
-//AP definitions
-#define AP_SSID "AP-EG"
-#define AP_PASSWORD "ap password"
-
-#define REPORT_INTERVAL 60 // in sec
-
-#define ONE_WIRE_BUS 2  // DS18B20 pin
-OneWire oneWire(ONE_WIRE_BUS);
+OneWire oneWire(2);
 DallasTemperature DS18B20(&oneWire);
 
 void setup() {
@@ -27,17 +21,19 @@ void setup() {
   
   sendTeperature(temp);
   
-  ESP.deepSleep(10000000);
-   
+  ESP.deepSleep(DEEP_SLEEP);
+  delay(100);  
 }
 
 void loop() {
+  // nothing to do here
 }
 
 void wifiConnect() {
-    Serial.print("Connecting to AP");
-    WiFi.begin(AP_SSID, AP_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED) {
+  Serial.println("");
+  Serial.print("Connecting to AP");
+  WiFi.begin(AP_SSID, AP_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.print(".");
   }
@@ -49,20 +45,24 @@ void wifiConnect() {
 void sendTeperature(float temp) {  
    WiFiClient client;
    
-   while(!client.connect("192.168.2.107", 8080)) {
+   while(!client.connect(SERVER_IP, SERVER_PORT)) {
     Serial.println("connection failed");
-    wifiConnect(); 
+    return;
   }
 
+  int d1 = temp;
+  float f2 = temp - d1;
+  int d2 = trunc(f2 * 10);
   char postData[8];
-  sprintf((char*)&postData, "%3.2f", temp);
+
+  sprintf(postData, "%3d.%02d", d1, d2);
+  Serial.println(postData);
    
-  client.println("POST /temperature/esp8266test1 HTTP/1.1");
-  client.println("Host: 192.168.2.107");
+  client.printf("PUT /thermometer/%s HTTP/1.1\n", THERMOMETER_ID);
+  client.printf("Host: %s\n", SERVER_IP);
   client.println("Cache-Control: no-cache");
   client.println("Content-Type: application/x-www-form-urlencoded");
-  client.print("Content-Length: ");
-  client.println(strlen(postData));
+  client.printf("Content-Length: %d\n", strlen(postData));
   client.println();
   client.println(postData);
                
