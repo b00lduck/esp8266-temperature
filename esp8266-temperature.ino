@@ -52,10 +52,10 @@ void sendTeperature(float temp) {
 
   int d1 = temp;
   float f2 = temp - d1;
-  int d2 = trunc(f2 * 10);
-  char postData[8];
+  int d2 = trunc(f2 * 100);
+  char postData[20];
 
-  sprintf(postData, "%3d.%02d", d1, d2);
+  sprintf(postData, "%d.%02d", d1, d2);
   Serial.println(postData);
    
   client.printf("PUT /thermometer/%s HTTP/1.1\n", THERMOMETER_ID);
@@ -64,7 +64,7 @@ void sendTeperature(float temp) {
   client.println("Content-Type: application/x-www-form-urlencoded");
   client.printf("Content-Length: %d\n", strlen(postData));
   client.println();
-  client.println(postData);
+  client.print(postData);
                
   delay(100);
   while(client.available()) {
