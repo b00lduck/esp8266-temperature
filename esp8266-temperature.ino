@@ -8,6 +8,11 @@ DallasTemperature DS18B20(&oneWire);
 
 void setup() {
   Serial.begin(115200); 
+
+  Serial.print(THERMOMETER_ID);
+  Serial.print(" @ version ");
+  Serial.println(VERSION_ID);
+  
   wifiConnect();
 
   float temp;
@@ -30,16 +35,25 @@ void loop() {
 }
 
 void wifiConnect() {
+  int retries = MAX_WIFI_RETRIES;
   Serial.println("");
   Serial.print("Connecting to AP");
   WiFi.begin(AP_SSID, AP_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
+  while ((WiFi.status() != WL_CONNECTED) && (retries--)) {
     delay(1000);
     Serial.print(".");
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("");
+    Serial.println("WiFi connection not possible, will retry later");        
+    ESP.deepSleep(DEEP_SLEEP_WIFI_FAILURE);
+    delay(100);  
   }
   
   Serial.println("");
   Serial.println("WiFi connected");  
+
 }
 
 void sendTeperature(float temp) {  
